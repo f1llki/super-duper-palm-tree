@@ -1,0 +1,407 @@
+#include <iostream>
+#include <string>
+#include <iomanip>
+#include <vector>
+using namespace std;
+
+/**
+ * Базовый абстрактный класс Book
+ * Моделирует общие свойства любой книги в книжном магазине
+ */
+class Book {
+protected:
+    string title;       // название книги
+    string author;      // автор книги
+    double price;       // цена книги
+    int quantity;       // количество экземпляров в наличии
+
+public:
+    /**
+     * Конструктор с параметрами
+     */
+    Book(string t, string a, double p, int q) 
+        : title(t), author(a) {
+        setPrice(p);
+        setQuantity(q);
+        cout << "Создан объект Book: \"" << title << "\"" << endl;
+    }
+    
+    /**
+     * Виртуальный деструктор
+     */
+    virtual ~Book() {
+        cout << "Уничтожен объект Book: \"" << title << "\"" << endl;
+    }
+    
+    // ========== Геттеры ==========
+    string getTitle() const { return title; }
+    string getAuthor() const { return author; }
+    double getPrice() const { return price; }
+    int getQuantity() const { return quantity; }
+    
+    // ========== Сеттеры с валидацией ==========
+    void setPrice(double p) {
+        if (p >= 0) {
+            price = p;
+        } else {
+            cout << "Ошибка: цена не может быть отрицательной. Установлено значение 0" << endl;
+            price = 0;
+        }
+    }
+    
+    void setQuantity(int q) {
+        if (q >= 0) {
+            quantity = q;
+        } else {
+            cout << "Ошибка: количество не может быть отрицательным. Установлено значение 0" << endl;
+            quantity = 0;
+        }
+    }
+    
+    // ========== Обычный метод (общий для всех потомков) ==========
+    /**
+     * Продажа одного экземпляра книги
+     * Уменьшает количество на 1, если есть в наличии
+     */
+    void sellOneCopy() {
+        if (quantity > 0) {
+            quantity--;
+            cout << "Продана книга \"" << title << "\". Осталось экземпляров: " << quantity << endl;
+        } else {
+            cout << "Ошибка: книга \"" << title << "\" отсутствует в наличии" << endl;
+        }
+    }
+    
+    /**
+     * Поступление партии книг (общий метод)
+     */
+    void addStock(int count) {
+        if (count > 0) {
+            quantity += count;
+            cout << "Поступило " << count << " экземпляров книги \"" << title 
+                 << "\". Теперь в наличии: " << quantity << endl;
+        } else {
+            cout << "Ошибка: количество поступления должно быть положительным" << endl;
+        }
+    }
+    
+    // ========== Чисто виртуальные методы ==========
+    /**
+     * Расчёт итоговой цены с учётом специфики формата
+     */
+    virtual double calcFinalPrice() = 0;
+    
+    /**
+     * Описание формата издания
+     */
+    virtual string getFormat() = 0;
+    
+    /**
+     * Виртуальный метод вывода информации
+     */
+    virtual void printInfo() {
+        cout << "Название:  " << title << endl;
+        cout << "Автор:     " << author << endl;
+        cout << "Цена:      " << fixed << setprecision(2) << price << " руб." << endl;
+        cout << "В наличии: " << quantity << " экз." << endl;
+        cout << "Формат:    " << getFormat() << endl;
+        cout << "Итоговая цена: " << fixed << setprecision(2) << calcFinalPrice() << " руб." << endl;
+    }
+};
+
+/**
+ * Производный класс: Печатная книга
+ */
+class PrintedBook : public Book {
+private:
+    double weight;          // вес книги в граммах
+    int pageCount;          // количество страниц
+
+public:
+    /**
+     * Конструктор с параметрами
+     */
+    PrintedBook(string t, string a, double p, int q, double w, int pages)
+        : Book(t, a, p, q), weight(w), pageCount(pages) {
+        cout << "  -> Печатная книга, вес: " << weight << "г, страниц: " << pageCount << endl;
+    }
+    
+    /**
+     * Метод расчёта стоимости доставки в зависимости от веса
+     * Специфичный метод для печатной книги
+     */
+    double calcDeliveryCost() {
+        if (weight <= 0) return 0;
+        // Базовая стоимость доставки 100 руб + 5 руб за каждые 100 грамм
+        double cost = 100 + (weight / 100) * 5;
+        return cost;
+    }
+    
+    /**
+     * Переопределение метода расчёта итоговой цены
+     * Для печатных книг цена остаётся базовой
+     */
+    double calcFinalPrice() override {
+        return price;
+    }
+    
+    /**
+     * Переопределение метода получения формата
+     */
+    string getFormat() override {
+        return "Печатная книга (бумажная)";
+    }
+    
+    /**
+     * Переопределение метода вывода информации
+     */
+    void printInfo() override {
+        Book::printInfo();  // вызов метода базового класса
+        cout << "Вес:       " << weight << " г." << endl;
+        cout << "Страниц:   " << pageCount << endl;
+        cout << "Доставка:  " << fixed << setprecision(2) << calcDeliveryCost() << " руб." << endl;
+    }
+};
+
+/**
+ * Производный класс: Электронная книга
+ */
+class EBook : public Book {
+private:
+    string fileFormat;      // формат файла (PDF, EPUB, FB2 и т.д.)
+    double fileSize;        // размер файла в мегабайтах
+    double discountPercent; // скидка для электронного издания (в процентах)
+
+public:
+    /**
+     * Конструктор с параметрами
+     */
+    EBook(string t, string a, double p, int q, string format, double size, double discount = 0)
+        : Book(t, a, p, q), fileFormat(format), fileSize(size) {
+        if (discount >= 0 && discount <= 100) {
+            discountPercent = discount;
+        } else {
+            cout << "Ошибка: скидка должна быть от 0 до 100. Установлена 0." << endl;
+            discountPercent = 0;
+        }
+        cout << "  -> Электронная книга, формат: " << fileFormat 
+             << ", размер: " << fileSize << " МБ, скидка: " << discountPercent << "%" << endl;
+    }
+    
+    /**
+     * Установка скидки с валидацией
+     */
+    void setDiscount(double discount) {
+        if (discount >= 0 && discount <= 100) {
+            discountPercent = discount;
+            cout << "Установлена скидка " << discountPercent << "% для книги \"" << title << "\"" << endl;
+        } else {
+            cout << "Ошибка: скидка должна быть от 0 до 100" << endl;
+        }
+    }
+    
+    /**
+     * Получение размера файла
+     */
+    double getFileSize() const { return fileSize; }
+    
+    /**
+     * Получение формата файла
+     */
+    string getFileFormat() const { return fileFormat; }
+    
+    /**
+     * Метод расчёта итоговой цены со скидкой для электронного издания
+     */
+    double calcFinalPrice() override {
+        return price * (1 - discountPercent / 100);
+    }
+    
+    /**
+     * Переопределение метода получения формата
+     */
+    string getFormat() override {
+        return "Электронная книга (" + fileFormat + ")";
+    }
+    
+    /**
+     * Переопределение метода вывода информации
+     */
+    void printInfo() override {
+        Book::printInfo();  // вызов метода базового класса
+        cout << "Формат файла: " << fileFormat << endl;
+        cout << "Размер файла: " << fileSize << " МБ" << endl;
+        cout << "Скидка:       " << discountPercent << "%" << endl;
+    }
+};
+
+/**
+ * Дополнительный производный класс: Аудиокнига
+ * Для демонстрации полиморфизма с тремя типами
+ */
+class AudioBook : public Book {
+private:
+    int duration;           // длительность в минутах
+    string narrator;        // чтец (исполнитель)
+    double audioQuality;    // качество звука (влияет на цену)
+
+public:
+    /**
+     * Конструктор с параметрами
+     */
+    AudioBook(string t, string a, double p, int q, int dur, string narr, double quality)
+        : Book(t, a, p, q), duration(dur), narrator(narr) {
+        if (quality >= 0 && quality <= 2) {
+            audioQuality = quality;
+        } else {
+            audioQuality = 1;
+        }
+        cout << "  -> Аудиокнига, длительность: " << duration << " мин, чтец: " << narrator << endl;
+    }
+    
+    /**
+     * Расчёт итоговой цены с учётом качества звука
+     */
+    double calcFinalPrice() override {
+        // Качество влияет на цену: от -20% до +20%
+        double qualityFactor = 1 + (audioQuality - 1) * 0.2;
+        return price * qualityFactor;
+    }
+    
+    /**
+     * Получение формата
+     */
+    string getFormat() override {
+        return "Аудиокнига";
+    }
+    
+    /**
+     * Форматирование длительности в часы и минуты
+     */
+    string getFormattedDuration() {
+        int hours = duration / 60;
+        int minutes = duration % 60;
+        return to_string(hours) + "ч " + to_string(minutes) + "мин";
+    }
+    
+    /**
+     * Переопределение метода вывода информации
+     */
+    void printInfo() override {
+        Book::printInfo();
+        cout << "Длительность: " << getFormattedDuration() << " (" << duration << " мин)" << endl;
+        cout << "Чтец:         " << narrator << endl;
+        cout << "Качество звука: " << audioQuality << " (1.0 - стандарт)" << endl;
+    }
+};
+
+int main() {
+    setlocale(LC_ALL, "Russian");
+    
+    cout << "ПОЛИМОРФИЗМ" << endl;
+    cout << "Иерархия классов: Book -> PrintedBook, EBook, AudioBook\n" << endl;
+    
+    // Создание массива указателей на базовый класс
+    const int N = 5;
+    Book* books[N];
+    
+    // Заполнение массива объектами разных производных классов
+    cout << "Создание объектов" << endl;
+    
+    books[0] = new PrintedBook("Война и мир", "Лев Толстой", 850.00, 10, 1250, 1225);
+    cout << endl;
+    
+    books[1] = new EBook("Мастер и Маргарита", "Михаил Булгаков", 450.00, 999, "EPUB", 2.5, 15);
+    cout << endl;
+    
+    books[2] = new PrintedBook("Преступление и наказание", "Фёдор Достоевский", 620.00, 5, 980, 672);
+    cout << endl;
+    
+    books[3] = new AudioBook("Мёртвые души", "Николай Гоголь", 550.00, 20, 480, "Игорь Князев", 1.5);
+    cout << endl;
+    
+    books[4] = new EBook("1984", "Джордж Оруэлл", 380.00, 500, "PDF", 1.8, 10);
+    cout << endl;
+    
+    // Демонстрация полиморфизма: вызов printInfo() в цикле
+    cout << "\nВызов printInfo() для всех объектов (полиморфизм)\n" << endl;
+    
+    for (int i = 0; i < N; i++) {
+        cout << "Книга " << i + 1 << ":" << endl;
+        books[i]->printInfo();
+        cout << endl;
+    }
+    
+    // Демонстрация вызова другого виртуального метода (calcFinalPrice и getFormat)
+    cout << "\nВызов виртуальных методов calcFinalPrice() и getFormat()\n" << endl;
+    
+    for (int i = 0; i < N; i++) {
+        cout << "Книга \"" << books[i]->getTitle() << "\":" << endl;
+        cout << "  Формат: " << books[i]->getFormat() << endl;
+        cout << "  Итоговая цена: " << fixed << setprecision(2) 
+             << books[i]->calcFinalPrice() << " руб." << endl;
+        cout << endl;
+    }
+    
+    // Демонстрация обычных методов (общих для всех)
+    cout << "\nДемонстрация обычных методов (sellOneCopy, addStock)\n" << endl;
+    
+    books[0]->sellOneCopy();      // продажа печатной книги
+    books[1]->sellOneCopy();      // продажа электронной книги
+    books[2]->addStock(3);        // пополнение запаса печатной книги
+    
+    cout << endl;
+    
+    cout << "\nДемонстрация специфических методов\n" << endl;
+    
+    // Для печатной книги - расчёт доставки
+    PrintedBook* printedBook = dynamic_cast<PrintedBook*>(books[0]);
+    if (printedBook) {
+        cout << "Стоимость доставки печатной книги \"" << printedBook->getTitle() 
+             << "\": " << fixed << setprecision(2) << printedBook->calcDeliveryCost() << " руб." << endl;
+    }
+    
+    // Для электронной книги - установка скидки
+    EBook* ebook = dynamic_cast<EBook*>(books[1]);
+    if (ebook) {
+        ebook->setDiscount(20);
+        cout << "Новая итоговая цена: " << fixed << setprecision(2) 
+             << ebook->calcFinalPrice() << " руб." << endl;
+    }
+    
+    // Для аудиокниги - форматированная длительность
+    AudioBook* audiobook = dynamic_cast<AudioBook*>(books[3]);
+    if (audiobook) {
+        cout << "Длительность аудиокниги: " << audiobook->getFormattedDuration() << endl;
+    }
+    
+    cout << endl;
+    
+    // Демонстрация работы валидации в производном классе
+    cout << "\nДемонстрация валидации\n" << endl;
+    
+    EBook* newEbook = new EBook("Тест", "Автор", 500.00, 100, "FB2", 1.5, 150);
+    newEbook->setDiscount(200);
+    delete newEbook;
+    
+    cout << endl;
+    
+    // Изменение цены через сеттер базового класса (с валидацией)
+    cout << "Попытка установить отрицательную цену для книги:" << endl;
+    books[0]->setPrice(-100);
+    cout << "Текущая цена: " << books[0]->getPrice() << " руб." << endl;
+    
+    cout << "\nИтоговое состояние\n" << endl;
+    for (int i = 0; i < N; i++) {
+        books[i]->printInfo();
+    }
+    
+    cout << "\nОсвобождение памяти (вызов деструкторов)\n" << endl;
+    for (int i = 0; i < N; i++) {
+        delete books[i];
+    }
+    
+    cout << "\nЗАВЕРШЕНИЕ" << endl;
+    
+    return 0;
+}
