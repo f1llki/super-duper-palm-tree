@@ -1,0 +1,141 @@
+#include <iostream>
+#include <string>
+using namespace std;
+
+// Класс предметной области: Книга в библиотеке
+class Book {
+private:
+    string title;        // название книги (строка)
+    int pageCount;       // количество страниц (число)
+    int yearPublished;   // год издания (число)
+    string status;       // статус: "в наличии", "выдана", "на реставрации"
+
+public:
+    // Конструктор 1: со всеми параметрами
+    Book(string t, int pages, int year, string st) {
+        title = t;
+        setPageCount(pages);      // с валидацией
+        setYearPublished(year);   // с валидацией
+        status = st;
+    }
+    
+    // Конструктор 2: только название и год, остальное по умолчанию
+    Book(string t, int year) {
+        title = t;
+        pageCount = 0;
+        yearPublished = year;
+        status = "в наличии";
+    }
+    
+    // Getters для всех полей
+    string getTitle() {
+        return title;
+    }
+    
+    int getPageCount() {
+        return pageCount;
+    }
+    
+    int getYearPublished() {
+        return yearPublished;
+    }
+    
+    string getStatus() {
+        return status;
+    }
+    
+    // Setter с валидацией для количества страниц
+    void setPageCount(int pages) {
+        if (pages >= 0 && pages <= 10000) {
+            pageCount = pages;
+        } else {
+            cout << "Ошибка: количество страниц должно быть от 0 до 10000" << endl;
+            pageCount = 0;
+        }
+    }
+    
+    // Setter с валидацией для года издания
+    void setYearPublished(int year) {
+        if (year >= 1450 && year <= 2024) {
+            yearPublished = year;
+        } else {
+            cout << "Ошибка: год издания должен быть от 1450 до 2024" << endl;
+            yearPublished = 2000;
+        }
+    }
+    
+    // Метод 1: выдать книгу читателю
+    void borrowBook() {
+        if (status == "в наличии") {
+            status = "выдана";
+            cout << "Книга \"" << title << "\" выдана читателю" << endl;
+        } else if (status == "выдана") {
+            cout << "Книга \"" << title << "\" уже выдана" << endl;
+        } else {
+            cout << "Книга \"" << title << "\" на реставрации, выдать нельзя" << endl;
+        }
+    }
+    
+    // Метод 2: вернуть книгу в библиотеку
+    void returnBook() {
+        if (status == "выдана") {
+            status = "в наличии";
+            cout << "Книга \"" << title << "\" возвращена в библиотеку" << endl;
+        } else if (status == "в наличии") {
+            cout << "Книга \"" << title << "\" уже в библиотеке" << endl;
+        } else {
+            cout << "Книга \"" << title << "\" на реставрации, возврат не требуется" << endl;
+        }
+    }
+    
+    // Метод 3: показать информацию о книге
+    void showInfo() {
+        cout << "=========================" << endl;
+        cout << "Название: " << title << endl;
+        cout << "Страниц: " << pageCount << endl;
+        cout << "Год издания: " << yearPublished << endl;
+        cout << "Статус: " << status << endl;
+        cout << "=========================" << endl;
+    }
+};
+
+int main() {
+    // Демонстрация работы
+    
+    // Создаем книги с помощью разных конструкторов
+    Book book1("Война и мир", 1225, 1869, "в наличии");
+    Book book2("Мастер и Маргарита", 1967);  // страниц 0, статус "в наличии" по умолчанию
+    
+    // Показываем информацию о книгах
+    cout << "=== Информация о книгах ===" << endl;
+    book1.showInfo();
+    book2.showInfo();
+    
+    // Демонстрация геттеров
+    cout << "\n=== Демонстрация геттеров ===" << endl;
+    cout << "Название первой книги: " << book1.getTitle() << endl;
+    cout << "Страниц в первой книге: " << book1.getPageCount() << endl;
+    cout << "Год издания первой книги: " << book1.getYearPublished() << endl;
+    cout << "Статус первой книги: " << book1.getStatus() << endl;
+    
+    // Демонстрация сеттеров с валидацией
+    cout << "\n=== Демонстрация сеттеров с валидацией ===" << endl;
+    book1.setPageCount(1500);   // корректное значение
+    book1.setYearPublished(2025); // некорректное значение (слишком большой год)
+    cout << "После изменения:" << endl;
+    cout << "Страниц: " << book1.getPageCount() << endl;
+    cout << "Год издания: " << book1.getYearPublished() << endl;
+    
+    // Демонстрация методов поведения
+    cout << "\n=== Демонстрация методов поведения ===" << endl;
+    book1.borrowBook();   // выдаем книгу
+    book1.borrowBook();   // пытаемся выдать еще раз
+    book1.returnBook();   // возвращаем
+    book1.returnBook();   // пытаемся вернуть еще раз
+    
+    // Финальный статус
+    cout << "\n=== Финальное состояние ===" << endl;
+    book1.showInfo();
+    
+    return 0;
+}
